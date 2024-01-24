@@ -141,7 +141,7 @@ describe('FullItemPageComponent', () => {
   });
 
   it('should display the item\'s metadata', () => {
-    const table = fixture.debugElement.query(By.css('table'));
+    const table = fixture.debugElement.query(By.css('div.table-responsive'));
     for (const metadatum of mockItem.allMetadata(Object.keys(mockItem.metadata))) {
       expect(table.nativeElement.innerHTML).toContain(metadatum.value);
     }
