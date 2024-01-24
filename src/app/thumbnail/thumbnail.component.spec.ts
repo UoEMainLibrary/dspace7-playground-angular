@@ -227,7 +227,7 @@ describe('ThumbnailComponent', () => {
 
         fixture.detectChanges();
         const image: HTMLElement = fixture.debugElement.query(By.css('img')).nativeElement;
-        expect(image.getAttribute('alt')).toBe('TRANSLATED ' + comp.alt);
+        expect(image.getAttribute('alt')).toBe('TRANSLATED ' + comp.alt + ' for PDF');
       });
     });
 
@@ -271,7 +271,7 @@ describe('ThumbnailComponent', () => {
         comp.ngOnChanges({});
         fixture.detectChanges();
         const image: HTMLElement = fixture.debugElement.query(By.css('img')).nativeElement;
-        expect(image.getAttribute('alt')).toBe('TRANSLATED ' + comp.alt);
+        expect(image.getAttribute('alt')).toBe('TRANSLATED ' + comp.alt + ' for PDF');
       });
     });
 
@@ -311,7 +311,7 @@ describe('ThumbnailComponent', () => {
           comp.ngOnChanges({});
           fixture.detectChanges();
           const image: HTMLElement = de.query(By.css('img')).nativeElement;
-          expect(image.getAttribute('alt')).toBe('TRANSLATED ' + comp.alt);
+          expect(image.getAttribute('alt')).toBe('TRANSLATED ' + comp.alt + ' for PDF');
         });
       });
 
