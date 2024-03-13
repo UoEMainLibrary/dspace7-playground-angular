@@ -82,7 +82,7 @@ describe('StatisticsTableComponent', () => {
 
       expect(de.query(By.css('div.views-header')).nativeElement.innerText)
         .toEqual('views');
-      expect(de.query(By.css('div..downloads-header')).nativeElement.innerText)
+      expect(de.query(By.css('div.downloads-header')).nativeElement.innerText)
         .toEqual('downloads');
 
       expect(de.query(By.css('div.item_1-views-data')).nativeElement.innerText)
