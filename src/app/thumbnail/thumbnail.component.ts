@@ -1,8 +1,13 @@
-import { CommonModule } from '@angular/common';
+import {
+  CommonModule,
+  isPlatformBrowser,
+} from '@angular/common';
 import {
   Component,
+  Inject,
   Input,
   OnChanges,
+  PLATFORM_ID,
   SimpleChanges,
 } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
@@ -53,7 +58,7 @@ export class ThumbnailComponent implements OnChanges {
   /**
    * The src attribute used in the template to render the image.
    */
-  src$ = new BehaviorSubject<string>(undefined);
+  src$: BehaviorSubject<string> = new BehaviorSubject<string>(undefined);
 
   retriedWithToken = false;
 
@@ -76,9 +81,10 @@ export class ThumbnailComponent implements OnChanges {
    * Whether the thumbnail is currently loading
    * Start out as true to avoid flashing the alt text while a thumbnail is being loaded.
    */
-  isLoading$ = new BehaviorSubject(true);
+  isLoading$: BehaviorSubject<boolean> = new BehaviorSubject(true);
 
   constructor(
+    @Inject(PLATFORM_ID) private platformID: any,
     protected auth: AuthService,
     protected authorizationService: AuthorizationDataService,
     protected fileService: FileService,
@@ -90,16 +96,18 @@ export class ThumbnailComponent implements OnChanges {
    * Use a default image if no actual image is available.
    */
   ngOnChanges(changes: SimpleChanges): void {
-    if (hasNoValue(this.thumbnail)) {
-      this.setSrc(this.defaultImage);
-      return;
-    }
+    if (isPlatformBrowser(this.platformID)) {
+      if (hasNoValue(this.thumbnail)) {
+        this.setSrc(this.defaultImage);
+        return;
+      }
 
-    const src = this.contentHref;
-    if (hasValue(src)) {
-      this.setSrc(src);
-    } else {
-      this.setSrc(this.defaultImage);
+      const src = this.contentHref;
+      if (hasValue(src)) {
+        this.setSrc(src);
+      } else {
+        this.setSrc(this.defaultImage);
+      }
     }
   }
 
@@ -181,9 +189,22 @@ export class ThumbnailComponent implements OnChanges {
    * @param src
    */
   setSrc(src: string): void {
-    this.src$.next(src);
-    if (src === null) {
-      this.isLoading$.next(false);
+    // only update the src if it has changed (the parent component may fire the same one multiple times
+    if (this.src$.getValue() !== src) {
+      // every time the src changes we need to start the loading animation again, as it's possible
+      // that it is first set to null when the parent component initializes and then set to
+      // the actual value
+      //
+      // isLoading$ will be set to false by the error or success handler afterwards, except in the
+      // case where src is null, then we have to set it manually here (because those handlers won't
+      // trigger)
+      if (src !== null && this.isLoading$.getValue() === false) {
+        this.isLoading$.next(true);
+      }
+      this.src$.next(src);
+      if (src === null && this.isLoading$.getValue() === true) {
+        this.isLoading$.next(false);
+      }
     }
   }
 
