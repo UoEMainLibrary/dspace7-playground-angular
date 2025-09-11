@@ -4,8 +4,10 @@ import {
   Type,
 } from '@angular/core';
 
+import { AccessibilitySettingsConfig } from '../app/accessibility/accessibility-settings.config';
 import { AdminNotifyMetricsRow } from '../app/admin/admin-notify-dashboard/admin-notify-metrics/admin-notify-metrics.model';
 import { HALDataService } from '../app/core/data/base/hal-data-service.interface';
+import { LiveRegionConfig } from '../app/shared/live-region/live-region.config';
 import { ActuatorsConfig } from './actuators.config';
 import { AuthConfig } from './auth-config.interfaces';
 import { BrowseByConfig } from './browse-by-config.interface';
@@ -32,6 +34,7 @@ import { SubmissionConfig } from './submission-config.interface';
 import { SuggestionConfig } from './suggestion-config.interfaces';
 import { ThemeConfig } from './theme.config';
 import { UIServerConfig } from './ui-server-config.interface';
+
 
 interface AppConfig extends Config {
   ui: UIServerConfig;
@@ -63,6 +66,8 @@ interface AppConfig extends Config {
   qualityAssuranceConfig: QualityAssuranceConfig;
   search: SearchConfig;
   notifyMetrics: AdminNotifyMetricsRow[];
+  liveRegion: LiveRegionConfig;
+  accessibility: AccessibilitySettingsConfig;
 }
 
 /**

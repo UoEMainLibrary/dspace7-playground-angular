@@ -4,14 +4,21 @@ import {
   NgIf,
 } from '@angular/common';
 import {
+  ChangeDetectorRef,
   Component,
   Inject,
+  OnChanges,
+  OnInit,
+  SimpleChanges,
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import {
+  NgbDropdownModule,
   NgbModal,
   NgbModalRef,
 } from '@ng-bootstrap/ng-bootstrap';
 import { TranslateModule } from '@ngx-translate/core';
+import { InfiniteScrollModule } from 'ngx-infinite-scroll';
 import {
   Observable,
   of as observableOf,
@@ -22,14 +29,16 @@ import {
   filter,
   map,
   take,
+  tap,
 } from 'rxjs/operators';
 
 import { ConfigurationDataService } from '../../../core/data/configuration-data.service';
+import { FindListOptions } from '../../../core/data/find-list-options.model';
 import { JsonPatchOperationPathCombiner } from '../../../core/json-patch/builder/json-patch-operation-path-combiner';
 import { JsonPatchOperationsBuilder } from '../../../core/json-patch/builder/json-patch-operations-builder';
 import {
   getFirstCompletedRemoteData,
-  getFirstSucceededRemoteData,
+  getFirstSucceededRemoteDataPayload,
   getRemoteDataPayload,
 } from '../../../core/shared/operators';
 import {
@@ -40,8 +49,13 @@ import {
 import { WorkspaceitemSectionCcLicenseObject } from '../../../core/submission/models/workspaceitem-section-cc-license.model';
 import { SubmissionCcLicenseDataService } from '../../../core/submission/submission-cc-license-data.service';
 import { SubmissionCcLicenseUrlDataService } from '../../../core/submission/submission-cc-license-url-data.service';
+import { BtnDisabledDirective } from '../../../shared/btn-disabled.directive';
 import { DsSelectComponent } from '../../../shared/ds-select/ds-select.component';
-import { isNotEmpty } from '../../../shared/empty.util';
+import {
+  hasNoValue,
+  hasValue,
+  isNotEmpty,
+} from '../../../shared/empty.util';
 import { ThemedLoadingComponent } from '../../../shared/loading/themed-loading.component';
 import { VarDirective } from '../../../shared/utils/var.directive';
 import { SectionModelComponent } from '../models/section.model';
@@ -64,10 +78,14 @@ import { SectionsType } from '../sections-type';
     VarDirective,
     NgForOf,
     DsSelectComponent,
+    NgbDropdownModule,
+    FormsModule,
+    InfiniteScrollModule,
+    BtnDisabledDirective,
   ],
   standalone: true,
 })
-export class SubmissionSectionCcLicensesComponent extends SectionModelComponent {
+export class SubmissionSectionCcLicensesComponent extends SectionModelComponent implements OnChanges, OnInit {
 
   /**
    * The form id
@@ -95,7 +113,7 @@ export class SubmissionSectionCcLicensesComponent extends SectionModelComponent 
   /**
    * Cache of the available Creative Commons licenses.
    */
-  submissionCcLicenses: SubmissionCcLicence[];
+  submissionCcLicenses: SubmissionCcLicence[] = [];
 
   /**
    * Reference to NgbModal
@@ -106,6 +124,25 @@ export class SubmissionSectionCcLicensesComponent extends SectionModelComponent 
    * Default jurisdiction configured
    */
   defaultJurisdiction: string;
+
+  /**
+   * The currently selected cc licence
+   */
+  selectedCcLicense: SubmissionCcLicence = new SubmissionCcLicence();
+
+  /**
+   * Options for paginated data loading
+   */
+  ccLicenceOptions: FindListOptions = {
+    elementsPerPage: 20,
+    currentPage: 1,
+  };
+  /**
+   * Check to stop paginated search
+   *
+   * @private
+   */
+  private _isLastPage: boolean;
 
   /**
    * The Creative Commons link saved in the workspace item.
@@ -124,6 +161,8 @@ export class SubmissionSectionCcLicensesComponent extends SectionModelComponent 
     return this.data.accepted;
   }
 
+  ccLicenseLink$: Observable<string>;
+
   constructor(
     protected modalService: NgbModal,
     protected sectionService: SectionsService,
@@ -131,6 +170,7 @@ export class SubmissionSectionCcLicensesComponent extends SectionModelComponent 
     protected submissionCcLicenseUrlDataService: SubmissionCcLicenseUrlDataService,
     protected operationsBuilder: JsonPatchOperationsBuilder,
     protected configService: ConfigurationDataService,
+    protected ref: ChangeDetectorRef,
     @Inject('collectionIdProvider') public injectedCollectionId: string,
     @Inject('sectionDataProvider') public injectedSectionData: SectionDataObject,
     @Inject('submissionIdProvider') public injectedSubmissionId: string,
@@ -140,6 +180,19 @@ export class SubmissionSectionCcLicensesComponent extends SectionModelComponent 
       injectedSectionData,
       injectedSubmissionId,
     );
+  }
+
+  ngOnInit(): void {
+    super.ngOnInit();
+    if (hasNoValue(this.ccLicenseLink$)) {
+      this.ccLicenseLink$ = this.getCcLicenseLink$();
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (hasValue(changes.sectionData) || hasValue(changes.submissionCcLicenses)) {
+      this.ccLicenseLink$ = this.getCcLicenseLink$();
+    }
   }
 
   /**
@@ -154,9 +207,10 @@ export class SubmissionSectionCcLicensesComponent extends SectionModelComponent 
    * @param ccLicense the Creative Commons license to select.
    */
   selectCcLicense(ccLicense: SubmissionCcLicence) {
-    if (!!this.getSelectedCcLicense() && this.getSelectedCcLicense().id === ccLicense.id) {
+    if (this.selectedCcLicense.id === ccLicense.id) {
       return;
     }
+    this.selectedCcLicense = ccLicense;
     this.setAccepted(false);
     this.updateSectionData({
       ccLicense: {
@@ -165,6 +219,7 @@ export class SubmissionSectionCcLicensesComponent extends SectionModelComponent 
       },
       uri: undefined,
     });
+    this.ccLicenseLink$ = this.getCcLicenseLink$();
   }
 
   /**
@@ -196,6 +251,7 @@ export class SubmissionSectionCcLicensesComponent extends SectionModelComponent 
       },
       accepted: false,
     });
+    this.ccLicenseLink$ = this.getCcLicenseLink$();
   }
 
   /**
@@ -300,13 +356,6 @@ export class SubmissionSectionCcLicensesComponent extends SectionModelComponent 
         }
         this.sectionData.data = data;
       }),
-      this.submissionCcLicensesDataService.findAll({ elementsPerPage: 9999 }).pipe(
-        getFirstSucceededRemoteData(),
-        getRemoteDataPayload(),
-        map((list) => list.page),
-      ).subscribe(
-        (licenses) => this.submissionCcLicenses = licenses,
-      ),
       this.configService.findByPropertyName('cc.license.jurisdiction').pipe(
         getFirstCompletedRemoteData(),
         getRemoteDataPayload(),
@@ -319,6 +368,7 @@ export class SubmissionSectionCcLicensesComponent extends SectionModelComponent 
         }
       }),
     );
+    this.loadCcLicences();
   }
 
   /**
@@ -337,5 +387,32 @@ export class SubmissionSectionCcLicensesComponent extends SectionModelComponent 
    */
   updateSectionData(data: WorkspaceitemSectionCcLicenseObject) {
     this.sectionService.updateSectionData(this.submissionId, this.sectionData.id, Object.assign({}, this.data, data));
+  }
+
+  onScroll(event) {
+    if (event.target.scrollTop + event.target.clientHeight >= event.target.scrollHeight) {
+      if (!this.isLoading && !this._isLastPage) {
+        this.ccLicenceOptions.currentPage++;
+        this.loadCcLicences();
+      }
+    }
+  }
+
+  loadCcLicences() {
+    this.isLoading = true;
+
+    this.subscriptions.push(
+      this.submissionCcLicensesDataService.findAll(this.ccLicenceOptions).pipe(
+        getFirstSucceededRemoteDataPayload(),
+        tap((response) => this._isLastPage = response.pageInfo.currentPage === response.pageInfo.totalPages),
+        map((list) => list.page),
+      ).subscribe(
+        (licenses) => {
+          this.submissionCcLicenses = [...this.submissionCcLicenses, ...licenses];
+          this.isLoading = false;
+          this.ref.detectChanges();
+        },
+      ),
+    );
   }
 }

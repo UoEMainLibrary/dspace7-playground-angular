@@ -12,6 +12,29 @@ export const environment: BuildConfig = {
     enabled: true,
     enablePerformanceProfiler: false,
     inlineCriticalCss: false,
+    transferState: true,
+    replaceRestUrl: false,
+    excludePathPatterns: [
+      {
+        pattern: '^/communities/[a-f0-9-]{36}/browse(/.*)?$',
+        flag: 'i',
+      },
+      {
+        pattern: '^/collections/[a-f0-9-]{36}/browse(/.*)?$',
+        flag: 'i',
+      },
+      { pattern: '^/browse/' },
+      { pattern: '^/search' },
+      { pattern: '^/community-list$' },
+      { pattern: '^/statistics/?' },
+      { pattern: '^/admin/' },
+      { pattern: '^/processes/?' },
+      { pattern: '^/notifications/' },
+      { pattern: '^/access-control/' },
+      { pattern: '^/health$' },
+    ],
+    enableSearchComponent: false,
+    enableBrowseComponent: false,
   },
 
   // Angular express server settings.
@@ -267,11 +290,13 @@ export const environment: BuildConfig = {
     },
   },
   community: {
+    defaultBrowseTab: 'search',
     searchSection: {
       showSidebar: true,
     },
   },
   collection: {
+    defaultBrowseTab: 'search',
     searchSection: {
       showSidebar: true,
     },
@@ -315,6 +340,7 @@ export const environment: BuildConfig = {
     enableEndUserAgreement: true,
     enablePrivacyStatement: true,
     enableCOARNotifySupport: true,
+    enableCookieConsentPopup: true,
   },
   markdown: {
     enabled: false,
@@ -422,4 +448,13 @@ export const environment: BuildConfig = {
       ],
     },
   ],
+
+  liveRegion: {
+    messageTimeOutDurationMs: 30000,
+    isVisible: false,
+  },
+
+  accessibility: {
+    cookieExpirationDuration: 7,
+  },
 };

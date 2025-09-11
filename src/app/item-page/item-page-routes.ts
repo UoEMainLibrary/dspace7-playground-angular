@@ -6,6 +6,7 @@ import { itemBreadcrumbResolver } from '../core/breadcrumbs/item-breadcrumb.reso
 import { dsoEditMenuResolver } from '../shared/dso-page/dso-edit-menu.resolver';
 import { LinkMenuItemModel } from '../shared/menu/menu-item/models/link.model';
 import { MenuItemType } from '../shared/menu/menu-item-type.model';
+import { viewTrackerResolver } from '../statistics/angulartics/dspace/view-tracker.resolver';
 import { BitstreamRequestACopyPageComponent } from './bitstreams/request-a-copy/bitstream-request-a-copy-page.component';
 import { UploadBitstreamComponent } from './bitstreams/upload/upload-bitstream.component';
 import { ThemedFullItemPageComponent } from './full/themed-full-item-page.component';
@@ -27,7 +28,6 @@ export const ROUTES: Route[] = [
     resolve: {
       dso: itemPageResolver,
       breadcrumb: itemBreadcrumbResolver,
-      menu: dsoEditMenuResolver,
     },
     runGuardsAndResolvers: 'always',
     children: [
@@ -35,10 +35,18 @@ export const ROUTES: Route[] = [
         path: '',
         component: ThemedItemPageComponent,
         pathMatch: 'full',
+        resolve: {
+          menu: dsoEditMenuResolver,
+          tracking: viewTrackerResolver,
+        },
       },
       {
         path: 'full',
         component: ThemedFullItemPageComponent,
+        resolve: {
+          menu: dsoEditMenuResolver,
+          tracking: viewTrackerResolver,
+        },
       },
       {
         path: ITEM_EDIT_PATH,

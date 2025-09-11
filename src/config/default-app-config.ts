@@ -1,5 +1,7 @@
+import { AccessibilitySettingsConfig } from '../app/accessibility/accessibility-settings.config';
 import { AdminNotifyMetricsRow } from '../app/admin/admin-notify-dashboard/admin-notify-metrics/admin-notify-metrics.model';
 import { RestRequestMethod } from '../app/core/data/rest-request-method';
+import { LiveRegionConfig } from '../app/shared/live-region/live-region.config';
 import { NotificationAnimationsType } from '../app/shared/notifications/models/notification-animations-type';
 import { ActuatorsConfig } from './actuators.config';
 import { AppConfig } from './app-config.interface';
@@ -333,6 +335,7 @@ export class DefaultAppConfig implements AppConfig {
 
   // Community Page Config
   community: CommunityPageConfig = {
+    defaultBrowseTab: 'search',
     searchSection: {
       showSidebar: true,
     },
@@ -340,6 +343,7 @@ export class DefaultAppConfig implements AppConfig {
 
   // Collection Page Config
   collection: CollectionPageConfig = {
+    defaultBrowseTab: 'search',
     searchSection: {
       showSidebar: true,
     },
@@ -476,6 +480,7 @@ export class DefaultAppConfig implements AppConfig {
     enableEndUserAgreement: true,
     enablePrivacyStatement: true,
     enableCOARNotifySupport: true,
+    enableCookieConsentPopup: true,
   };
 
   // Whether to enable Markdown (https://commonmark.org/) and MathJax (https://www.mathjax.org/)
@@ -515,6 +520,7 @@ export class DefaultAppConfig implements AppConfig {
       enabled: false,
       filter: ['title', 'author', 'subject', 'entityType'],
     },
+    filterPlaceholdersCount: 5,
   };
 
   notifyMetrics: AdminNotifyMetricsRow[] = [
@@ -591,4 +597,15 @@ export class DefaultAppConfig implements AppConfig {
       ],
     },
   ];
+
+  // Live Region configuration, used by the LiveRegionService
+  liveRegion: LiveRegionConfig = {
+    messageTimeOutDurationMs: 30000,
+    isVisible: false,
+  };
+
+  // Accessibility settings configuration, used by the AccessibilitySettingsService
+  accessibility: AccessibilitySettingsConfig = {
+    cookieExpirationDuration: 7,
+  };
 }
